@@ -1,0 +1,339 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use SDL;
+use SDLx::App;
+use SDL::Event;
+use SDL::Events;
+use OpenGL qw(:all);
+use OpenGL::Image;
+my $app = SDLx::App->new(w => 1680, h => 1050, dt => 0.5, min_t => 1/60, gl =>1, exit_on_quit => 1);
+$app->fullscreen();
+my $angle = 0;
+my @diffuse = (0,0,0);
+my @ambient = (1,1,1);
+my @lightPos = (0, 0, 1, 0);
+my $exiting = 0;
+my $texID;
+my $shrubID;
+my $skybox;
+my $skyboxImg = 'skybox.tga';
+$shrubID = 0;
+$texID = 0;
+my @tex;
+my @shrub;
+my $camx;
+my $moveCam;
+my $renderMode;
+my $lightOverride;
+$moveCam = 0;
+$camx = 0;
+$renderMode = GL_TRIANGLES;
+$lightOverride = 0;
+
+my @images = (["img/stone.tga"      ,0],
+              ["img/grass.tga"      ,0],
+              ["img/snow.tga"       ,0],
+              ["img/woodLog.tga"    ,0],
+              ["img/woodPlank.tga"  ,0],
+              ["img/crafting.tga"   ,0],
+              ["img/furnace.tga"    ,0],
+              ["img/furnace_lit.tga",0],
+              ["img/coal.tga"       ,0],
+              ["img/iron.tga"       ,0],
+              ["img/redstone.tga"   ,0],
+              ["img/gold.tga"       ,0],
+              ["img/diamond.tga"    ,0],
+              ["img/chest.tga"      ,0],
+              ["img/glass.tga"      ,1],
+              ["img/bookcase.tga"   ,0],
+              ["img/tnt.tga"        ,0]
+            );
+
+my @shrubs = (["img/shrub/shrub.tga",      0],
+              ["img/shrub/rose.tga",       0],
+              ["img/shrub/dandelion.tga",  0],
+              ["img/shrub/brownShroom.tga",0],
+              ["img/shrub/redShroom.tga"  ,0],
+              ["img/shrub/cobweb.tga"     ,0],
+              ["img/shrub/reed.tga"       ,0]);
+
+init();
+$app->add_event_handler(\&handleEvents);
+$app->add_move_handler(\&moveCamera);
+$app->add_show_handler(\&display);
+$app->run();
+
+sub handleEvents {
+  my ($type, $key);
+  my ($event, $app) = @_;
+  $type = $event->type();
+  if ($type == SDL_QUIT) {$app->stop()}
+  if ($type == SDL_KEYDOWN) {
+    $key = $event->key_sym;
+    if ($key == SDLK_DOWN) {
+      $moveCam = -1;
+    }
+    elsif ($key == SDLK_UP) {
+      $moveCam = 1;
+    }
+    if ($key == SDLK_TAB) {
+      if($renderMode == GL_TRIANGLES) {
+        glDisable(GL_LIGHT0);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_LIGHTING);
+        $renderMode = GL_LINE_STRIP;
+        $lightOverride = 1;
+      }
+      else {
+        glEnable(GL_LIGHT0);
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_LIGHTING);
+        $renderMode = GL_TRIANGLES;
+        $lightOverride = 0;
+      }
+    }
+    if ($key == SDLK_SPACE) {
+      if ($texID < $#images) {
+        $texID++;
+      }
+      else {
+        $texID = 0;
+      }
+    }
+    if ($key == SDLK_LCTRL) {
+      if ($shrubID < $#shrubs) {
+        $shrubID++
+      }
+      else {
+        $shrubID = 0;
+      }
+    }
+    if ($key == SDLK_ESCAPE) {
+      exit();
+    }
+  }
+  if ($type == SDL_KEYUP) {
+    $key = $event->key_sym;
+    if ($key == SDLK_DOWN || $key == SDLK_UP) {
+      $moveCam = 0;
+    }
+  }
+}
+
+sub moveCamera {
+  my $count = $_[0];
+  if ($moveCam == 1) {
+    $camx += 2 * $count;
+  }
+  elsif ($moveCam == -1) {
+    $camx -= 2 * $count;
+  }
+}
+
+sub init {
+  glutInit();
+  glShadeModel(GL_SMOOTH);
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_LIGHTING);
+  glEnable(GL_NORMALIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective( 60, 1680/1050, 1, 1000);
+  glMatrixMode(GL_MODELVIEW);
+  glEnable(GL_LIGHT0);
+
+  ##INITIALISE TEXTURES##
+  print "Loading Textures, please wait...\n";
+  @tex = glGenTextures_p($#images+1);
+  @shrub = glGenTextures_p($#shrubs);
+  foreach my $i (0.. $#images) {
+    loadTexture($images[$i], $i, \@tex);
+  }
+  foreach my $i (0.. $#shrubs) {
+    loadTexture($shrubs[$i], $i, \@shrub);
+  }
+  loadSkybox($skyboxImg, \$skybox);
+}
+
+sub display {
+  my ($delta, $app) = @_;
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glLoadIdentity();
+  gluLookAt (0.0, $camx, 8.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  glMaterialfv_p(GL_BACK, GL_SPECULAR, 1,1,1,0);
+  glMaterialfv_p(GL_BACK, GL_SHININESS, 50);
+  glPushMatrix();
+    glRotatef($angle, 0, 1, 0);
+    glColor4d(1,1,1,1);
+    draw_skybox(1000, $renderMode, $skybox);
+    draw_cube(2, $renderMode, \@tex, $texID, $images[$texID][1]);
+    glTranslatef(0,2,0);
+    draw_shrub(2, $renderMode, \@shrub, $shrubID);
+    #glutSolidSphere(1, 10, 10);
+  glPopMatrix();
+  $angle += $delta * 10;
+  $angle = $angle >= 360 ? ($angle - 360) : $angle;
+  $app->sync();
+}
+
+sub draw_cube {
+  my $mul = shift;
+  my $type = shift;
+  my $tex = shift;
+  my $texID = shift;
+  my $transparent = shift;
+  if ($transparent) {
+    glEnable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.99);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  }
+  glBindTexture(GL_TEXTURE_2D, $$tex[$texID]);
+  my @indices = qw( 2 3 0  0 1 2
+                    6 7 3  3 2 6
+                    5 6 2  2 1 5
+                    4 5 1  1 0 4
+                    7 4 0  0 3 7
+                    6 7 4  4 5 6);
+  my @vertices = ([-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5],
+                  [-0.5,  0.5, -0.5], [0.5,  0.5, -0.5], [0.5,  0.5, 0.5], [-0.5,  0.5, 0.5]);
+
+  my @uvMap = ([0.25, 0.25], [0.25, 0.50], [0.50, 0.50], [0.50, 0.50], [0.50, 0.25], [0.25, 0.25],
+               [0.25, 0.75], [0.00, 0.75], [0.00, 0.50], [0.00, 0.50], [0.25, 0.50], [0.25, 0.75],
+               [0.50, 0.75], [0.25, 0.75], [0.25, 0.50], [0.25, 0.50], [0.50, 0.50], [0.50, 0.75],
+               [0.75, 0.75], [0.50, 0.75], [0.50, 0.50], [0.50, 0.50], [0.75, 0.50], [0.75, 0.75],
+               [1.00, 0.75], [0.75, 0.75], [0.75, 0.50], [0.75, 0.50], [1.00, 0.50], [1.00, 0.75],
+               [0.25, 0.75], [0.25, 1.00], [0.50, 1.00], [0.50, 1.00], [0.50, 0.75], [0.25, 0.75]);
+  glBegin($type);
+  foreach my $triangle (0 .. 11) {
+    foreach my $vertex (0 .. 2) {
+      my $index  = $indices[3 * $triangle + $vertex];
+      my $coords = $vertices[$index];
+      my $uv = $uvMap[3 * $triangle + $vertex];
+      #my $colour = $color[$index];
+      #glColor3d(@$colour);
+      #print "@$uv\n";
+      glTexCoord2f($$uv[0], $$uv[1]);
+      glNormal3f($$coords[0] * $mul * 1.1, $$coords[1] * $mul * 1.1, $$coords[2] * $mul * 1.1);
+      glVertex3f($$coords[0] * $mul, $$coords[1] * $mul, $$coords[2] * $mul);
+    }
+  }
+  glEnd;
+  if ($transparent) {
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+  }
+}
+
+sub draw_shrub {
+  my $mul = shift;
+  my $type = shift;
+  my $tex = shift;
+  my $texID = shift;
+  glEnable(GL_BLEND);
+  glDisable(GL_LIGHTING) if not $lightOverride;
+  glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER, 0.99);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBindTexture(GL_TEXTURE_2D, $$tex[$texID]);
+  my @indices = qw( 0 4 6  6 2 0
+                    3 7 5  5 1 3);
+
+  my @vertices = ([-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5],
+                  [-0.5,  0.5, -0.5], [0.5,  0.5, -0.5], [0.5,  0.5, 0.5], [-0.5,  0.5, 0.5]);
+
+  my @uvMap = ([0,0], [0,1], [1,1], [1,1],[1,0],[0,0],
+               [0,0], [0,1], [1,1], [1,1],[1,0],[0,0]);
+  glBegin($type);
+  foreach my $triangle (0..3) {
+    foreach my $vertex (0..2) {
+      my $index = $indices[3* $triangle + $vertex];
+      my $coords = $vertices[$index];
+      my $uv = $uvMap[3 * $triangle + $vertex];
+
+      glTexCoord2f($$uv[0], $$uv[1]);
+      glNormal3f($$coords[0] * $mul * 1.1, $$coords[1] * $mul * 1.1, $$coords[2] * $mul * 1.1);
+      glVertex3f($$coords[0] * $mul, $$coords[1] * $mul, $$coords[2] * $mul);
+    }
+  }
+  glEnd();
+  glDepthMask(GL_TRUE);
+  glDisable(GL_BLEND);
+  glDisable(GL_ALPHA_TEST);
+  glEnable(GL_LIGHTING) if not $lightOverride;
+}
+
+sub draw_skybox {
+  my $mul = shift;
+  my $type = shift;
+  my $tex = shift;
+  glDisable(GL_LIGHTING) if not $lightOverride;
+  glBindTexture(GL_TEXTURE_2D, $tex);
+  my @indices = qw( 2 3 0  0 1 2
+                    6 7 3  3 2 6
+                    5 6 2  2 1 5
+                    4 5 1  1 0 4
+                    7 4 0  0 3 7
+                    6 7 4  4 5 6);
+  my @vertices = ([-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5],
+                  [-0.5,  0.5, -0.5], [0.5,  0.5, -0.5], [0.5,  0.5, 0.5], [-0.5,  0.5, 0.5]);
+
+  my @uvMap = ([0.25, 0.25], [0.25, 0.50], [0.50, 0.50], [0.50, 0.50], [0.50, 0.25], [0.25, 0.25],
+               [0.25, 0.75], [0.00, 0.75], [0.00, 0.50], [0.00, 0.50], [0.25, 0.50], [0.25, 0.75],
+               [0.50, 0.75], [0.25, 0.75], [0.25, 0.50], [0.25, 0.50], [0.50, 0.50], [0.50, 0.75],
+               [0.75, 0.75], [0.50, 0.75], [0.50, 0.50], [0.50, 0.50], [0.75, 0.50], [0.75, 0.75],
+               [1.00, 0.75], [0.75, 0.75], [0.75, 0.50], [0.75, 0.50], [1.00, 0.50], [1.00, 0.75],
+               [0.25, 0.75], [0.25, 1.00], [0.50, 1.00], [0.50, 1.00], [0.50, 0.75], [0.25, 0.75]);
+  glBegin($type);
+  foreach my $triangle (0 .. 11) {
+    foreach my $vertex (0 .. 2) {
+      my $index  = $indices[3 * $triangle + $vertex];
+      my $coords = $vertices[$index];
+      my $uv = $uvMap[3 * $triangle + $vertex];
+      #my $colour = $color[$index];
+      #glColor3d(@$colour);
+      #print "@$uv\n";
+      glTexCoord2f($$uv[0], $$uv[1]);
+      glVertex3f($$coords[0] * $mul, $$coords[1] * $mul, $$coords[2] * $mul);
+    }
+  }
+  glEnd;
+  glEnable(GL_LIGHTING) if not $lightOverride;
+}
+
+sub loadTexture {
+  my $image = shift;
+  my $id = shift;
+  my $tex = shift;
+  print "Loading texture: $$image[0]\n";
+  my $img = new OpenGL::Image(source=>$$image[0]) or die "could not load image: $$image[0]";
+  my ($Tex_Type,$Tex_Format,$Tex_Size) = $img->Get('gl_internalformat','gl_format','gl_type');
+  my ($Tex_Width,$Tex_Height) = $img->Get('width','height');
+  my $pixels = $img->GetArray();
+  glBindTexture(GL_TEXTURE_2D, $$tex[$id]);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexImage2D_c(GL_TEXTURE_2D, 0, $Tex_Type, $Tex_Width, $Tex_Height, 0, $Tex_Format, $Tex_Size, $pixels->ptr());
+  print "Successfully loaded texture: $$image[0]\n";
+}
+
+sub loadSkybox {
+  my $sboxImg = shift;
+  my $texture = shift;
+  print "Loading Skybox: $sboxImg\n";
+  $$texture = glGenTextures_p(1);
+  my $img = new OpenGL::Image(source=>$sboxImg) or die "Could not load skybox image";
+  my ($Tex_Type,$Tex_Format,$Tex_Size) = $img->Get('gl_internalformat','gl_format','gl_type');
+  my ($Tex_Width,$Tex_Height) = $img->Get('width','height');
+  my $pixels = $img->GetArray();
+  glBindTexture(GL_TEXTURE_2D, $$texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexImage2D_c(GL_TEXTURE_2D, 0, $Tex_Type, $Tex_Width, $Tex_Height, 0, $Tex_Format, $Tex_Size, $pixels->ptr());
+  print "Successfully loaded Skybox: $sboxImg\n";
+}
+
+
