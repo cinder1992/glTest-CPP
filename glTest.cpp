@@ -43,7 +43,7 @@ bool initGL(void) {
   glEnable(GL_LIGHT0);
   //load textures
   cubeTex.loadTextures(cubeTexArr);
-  //shrubTex.loadTextures(shrubTex);
+  //shrubTex.loadTextures(shrubTexArr);
 }
 
 void gameLoop(void) {
@@ -155,7 +155,7 @@ void drawScene(void) {
         drawCube(0.3, renderType);
       }
     glPopMatrix();
-    //glColor3d(1, 0, 1);
+    glColor3d(1, 1, 1);
     drawCube(2, renderType);
   glPopMatrix();
   if (shouldRotCamera) camAngle += 10 * camLeftRight;
@@ -167,10 +167,18 @@ void drawScene(void) {
 }
 
 void drawCube(GLfloat scale, GLenum mode) {
+  cubeTex.bindTexture(3);
   GLfloat Verticies[8][3] = {{-0.5, -0.5, -0.5}, {0.5, -0.5, -0.5}, {0.5, -0.5, 0.5}, {-0.5, -0.5, 0.5},
                              {-0.5,  0.5, -0.5}, {0.5,  0.5, -0.5}, {0.5,  0.5, 0.5}, {-0.5,  0.5, 0.5}};
 
-  GLfloat Indicies[72] = {7, 4, 0,  7, 3, 0,
+  GLfloat uvMap[36][2] = {{0.75, 0.75}, {0.50, 0.75}, {0.50, 0.50}, {0.75, 0.75}, {0.75, 0.50}, {0.50, 0.50},
+                          {0.50, 0.75}, {0.25, 0.75}, {0.25, 0.50}, {0.50, 0.75}, {0.50, 0.50}, {0.25, 0.50},
+                          {0.25, 0.75}, {0.00, 0.75}, {0.00, 0.50}, {0.25, 0.75}, {0.25, 0.50}, {0.00, 0.50},
+                          {1.00, 0.75}, {0.75, 0.75}, {0.75, 0.50}, {1.00, 0.75}, {1.00, 0.50}, {0.75, 0.50},
+                          {0.50, 0.25}, {0.50, 0.50}, {0.25, 0.50}, {0.50, 0.25}, {0.25, 0.25}, {0.25, 0.50},
+                          {0.25, 0.75}, {0.50, 0.75}, {0.50, 1.00}, {0.25, 0.75}, {0.25, 1.00}, {0.50, 1.00}};
+
+  GLfloat Indicies[36] = {7, 4, 0,  7, 3, 0,
                           4, 5, 1,  4, 0, 1,
                           5, 6, 2,  5, 1, 2,
                           6, 7, 3,  6, 2, 3,
@@ -178,18 +186,21 @@ void drawCube(GLfloat scale, GLenum mode) {
                           5, 4, 7,  5, 6, 7};
 
   glBegin(mode);
+  fprintf(stdout, "glBegin\n");
   for(int i = 0; i <= 11; i++) {
     for(int j = 0; j <= 2; j++) {
       int Index = Indicies[3 * i + j];
-      if (mode == GL_TRIANGLES) 
-        glColor3f(Verticies[Index][0], Verticies[Index][1], Verticies[Index][2]);
-      else
+      if (mode != GL_TRIANGLES) 
         glColor3f(1, 0, 0);
+      else
+        fprintf(stdout, "Index %i, Coordinates: %f, %f\n", Index, uvMap[3 * i + j][0], uvMap[3 * i + j][1]);
+        glTexCoord2f(uvMap[3 * i + j][0], uvMap[3 * i + j][1]);
       glNormal3f(Verticies[Index][0] * 1.1, Verticies[Index][1] * 1.1, Verticies[Index][2] * 1.1);
       glVertex3f(Verticies[Index][0] * scale, Verticies[Index][1] * scale, Verticies[Index][2] * scale);
     }
   }
   glEnd();
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void moveCamera(int direction) {
