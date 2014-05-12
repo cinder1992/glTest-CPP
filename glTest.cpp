@@ -42,8 +42,8 @@ bool initGL(void) {
   glMatrixMode(GL_MODELVIEW);
   glEnable(GL_LIGHT0);
   //load textures
-  cubeTex.loadTextures(cubeTexArr);
-  //shrubTex.loadTextures(shrubTexArr);
+  cubeTex = new multiTex(17, cubeTexArr);
+  shrubTex = new multiTex(7, shrubTexArr);
 }
 
 void gameLoop(void) {
@@ -167,7 +167,7 @@ void drawScene(void) {
 }
 
 void drawCube(GLfloat scale, GLenum mode) {
-  cubeTex.bindTexture(3);
+  cubeTex->bindTexture(3);
   GLfloat Verticies[8][3] = {{-0.5, -0.5, -0.5}, {0.5, -0.5, -0.5}, {0.5, -0.5, 0.5}, {-0.5, -0.5, 0.5},
                              {-0.5,  0.5, -0.5}, {0.5,  0.5, -0.5}, {0.5,  0.5, 0.5}, {-0.5,  0.5, 0.5}};
 
@@ -186,15 +186,15 @@ void drawCube(GLfloat scale, GLenum mode) {
                           5, 4, 7,  5, 6, 7};
 
   glBegin(mode);
-  fprintf(stdout, "glBegin\n");
+  //fprintf(stdout, "glBegin\n");
   for(int i = 0; i <= 11; i++) {
     for(int j = 0; j <= 2; j++) {
       int Index = Indicies[3 * i + j];
       if (mode != GL_TRIANGLES) 
         glColor3f(1, 0, 0);
       else
-        fprintf(stdout, "Index %i, Coordinates: %f, %f\n", Index, uvMap[3 * i + j][0], uvMap[3 * i + j][1]);
-        glTexCoord2f(uvMap[3 * i + j][0], uvMap[3 * i + j][1]);
+        //fprintf(stdout, "Index %i, Coordinates: %f, %f\n", Index, uvMap[3 * i + j][0], uvMap[3 * i + j][1]);
+        glTexCoord2f(uvMap[3 * i + j][0], 1.0 - uvMap[3 * i + j][1]); //T vector inverted because SDL_Image loads TGA upside-down.
       glNormal3f(Verticies[Index][0] * 1.1, Verticies[Index][1] * 1.1, Verticies[Index][2] * 1.1);
       glVertex3f(Verticies[Index][0] * scale, Verticies[Index][1] * scale, Verticies[Index][2] * scale);
     }
@@ -211,6 +211,8 @@ void moveCamera(int direction) {
 }
 
 void cleanup(void) {
+  delete cubeTex;
+  delete shrubTex;
   SDL_RemoveTimer(gameTick);
   SDL_GL_DeleteContext(mainGLContext);
   SDL_DestroyWindow(mainWindow);

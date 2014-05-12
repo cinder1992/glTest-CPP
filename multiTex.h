@@ -11,7 +11,7 @@ class multiTex {
     GLuint* texArray;
     int numTextures;
   public:
-    multiTex(int);
+    multiTex(int, const char*[]);
     ~multiTex();
     int loadTextures(const char*[]);
     void bindTexture(int);

@@ -1,11 +1,12 @@
 #include "multiTex.h"
 #include <iostream>
 
-multiTex::multiTex(int num) {
+multiTex::multiTex(int num, const char* texFile[]) {
   texArray = new GLuint [num];
   imgArray = new SDL_Surface* [num];
   glGenTextures(num, texArray);
   numTextures = num;
+  loadTextures(texFile);
 }
 
 multiTex::~multiTex(void) {

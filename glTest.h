@@ -24,16 +24,16 @@ GLfloat Ambient[] = {3.0, 3.0, 3.0, 0.0};
 GLfloat Specular[] = {5.0, 5.0, 5.0, 0.0};
 GLfloat lightPos[] = {0.0, 0.0, 2.0, 0.0};
 
-multiTex cubeTex(17);
-//multiTex shrubTex(7);
 
 const char * cubeTexArr[] = {"img/stone.tga", "img/grass.tga", "img/snow.tga", "img/woodLog.tga",
                           "img/woodPlank.tga", "img/crafting.tga", "img/furnace.tga", "img/furnace_lit.tga",
                           "img/coal.tga", "img/iron.tga", "img/redstone.tga", "img/gold.tga",
                           "img/diamond.tga", "img/chest.tga", "img/glass.tga", "img/bookcase.tga", "img/tnt.tga"};
 
-//const char * shrubTexArr[] = {"img/shrub/shrub.tga", "img/shrub/rose.tga", "img/shrub/dandelion.tga", "img/shrub/brownShroom.tga",
-//                              "img/shrub/redShroom.tga", "img/shrub/cobweb.tga", "img/shrub/reed.tga"};
+const char * shrubTexArr[] = {"img/shrub/shrub.tga", "img/shrub/rose.tga", "img/shrub/dandelion.tga", "img/shrub/brownShroom.tga",
+                              "img/shrub/redShroom.tga", "img/shrub/cobweb.tga", "img/shrub/reed.tga"};
+multiTex* cubeTex;
+multiTex* shrubTex;
 //function defs
 bool init(void);
 bool initGL(void);
