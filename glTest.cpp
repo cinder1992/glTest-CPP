@@ -39,9 +39,9 @@ void initGL(void) { //TODO: Return code for when
   glEnable(GL_NORMALIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluPerspective(60, SCREEN_X / SCREEN_Y, 1, 1000); //FIXME: Rendering seems wide on X axis.
+  const GLdouble screenAspect = (SCREEN_X / SCREEN_Y);
+  fprintf(stdout, "Screen Aspect: %f", screenAspect);
+  gluPerspective(60, screenAspect, 1, 1000);
   glMatrixMode(GL_MODELVIEW);
   glEnable(GL_LIGHT0);
   //load textures
@@ -173,18 +173,17 @@ void drawScene(void) {
         drawCube(0.3, renderType);
       }
     glPopMatrix();
-    glColor3d(1, 1, 1);
+    glColor4d(1, 1, 1, 1);
     drawCube(2, renderType);
   glPopMatrix();
   if (shouldRotCamera) camAngle += 10 * camLeftRight;
   camAngle = camAngle >= 360 ? (camAngle - 360) : camAngle;
   lightAngle += 5;
   lightAngle = lightAngle >= 360 ? (lightAngle - 360) : lightAngle;
-  glFlush();
   SDL_GL_SwapWindow(mainWindow);
 }
 
-void drawCube(GLfloat scale, GLenum mode) { //FIXME: Move to object file?
+void drawCube(GLfloat scale, GLenum mode) { //FIXME: Move to object?
   cubeTex->bindTexture(cubeTexMode);
   GLfloat Verticies[8][3] = {{-0.5, -0.5, -0.5}, {0.5, -0.5, -0.5}, {0.5, -0.5, 0.5}, {-0.5, -0.5, 0.5},
                              {-0.5,  0.5, -0.5}, {0.5,  0.5, -0.5}, {0.5,  0.5, 0.5}, {-0.5,  0.5, 0.5}};

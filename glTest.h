@@ -8,7 +8,7 @@ SDL_Window* mainWindow;
 SDL_GLContext mainGLContext;
 SDL_TimerID gameTick;
 bool isRunning = true;
-int SCREEN_X = 800, SCREEN_Y = 600;
+const GLdouble SCREEN_X = 1440.0, SCREEN_Y = 900.0;
 GLfloat camx = 0;
 bool shouldMoveCamera = false;
 bool shouldRotCamera = false;
@@ -37,7 +37,7 @@ multiTex* cubeTex;
 multiTex* shrubTex;
 //function defs
 bool init(void);
-bool initGL(void);
+void initGL(void);
 void gameLoop(void);
 void handleKeyDown(SDL_KeyboardEvent*);
 void handleKeyUp(SDL_KeyboardEvent*);
