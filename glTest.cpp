@@ -40,7 +40,6 @@ void initGL(void) { //TODO: Return code for when
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   const GLdouble screenAspect = (SCREEN_X / SCREEN_Y);
-  fprintf(stdout, "Screen Aspect: %f", screenAspect);
   gluPerspective(60, screenAspect, 1, 1000);
   glMatrixMode(GL_MODELVIEW);
   glEnable(GL_LIGHT0);

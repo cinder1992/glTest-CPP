@@ -10,6 +10,7 @@ class multiTex {
     SDL_Surface** imgArray;
     GLuint* texArray;
     int numTextures;
+    GLenum textureFormat(SDL_PixelFormat*, const char*);
   public:
     multiTex(int, const char*[]);
     ~multiTex();
