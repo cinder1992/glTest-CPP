@@ -1,8 +1,7 @@
 #include "multiTex.h"
 #include <iostream>
-#ifdef __WIN32__
 #include <cstdlib>
-#endif // __WIN32__
+
 
 //FIXME: Replace this code with the SDL2 texture function using SDL Surfaces
 multiTex::multiTex(int num, const char* texFile[]) {
@@ -42,7 +41,7 @@ int multiTex::loadTextures(const char* texFile[]) {
 
     if(imgArray[i] == NULL) {
       std::cout << "Error in loading image file! " << IMG_GetError() << std::endl;
-      exit(1);
+      exit(EXIT_FAILURE);
     }
     glBindTexture(GL_TEXTURE_2D, texArray[i]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
