@@ -183,6 +183,12 @@ void drawScene(void) {
 }
 
 void drawCube(GLfloat scale, GLenum mode) { //FIXME: Move to object?
+  if(cubeTex->isTransparent(cubeTexMode)) {
+    glEnable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.99);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  }
   cubeTex->bindTexture(cubeTexMode);
   GLfloat Verticies[8][3] = {{-0.5, -0.5, -0.5}, {0.5, -0.5, -0.5}, {0.5, -0.5, 0.5}, {-0.5, -0.5, 0.5},
                              {-0.5,  0.5, -0.5}, {0.5,  0.5, -0.5}, {0.5,  0.5, 0.5}, {-0.5,  0.5, 0.5}};
@@ -221,6 +227,10 @@ void drawCube(GLfloat scale, GLenum mode) { //FIXME: Move to object?
   }
   glEnd();
   glBindTexture(GL_TEXTURE_2D, 0);
+  if(cubeTex->isTransparent(cubeTexMode)) {
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+  }
 }
 
 void moveCamera(int direction) {

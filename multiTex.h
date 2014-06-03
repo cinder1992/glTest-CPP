@@ -10,11 +10,13 @@ class multiTex {
     SDL_Surface** imgArray;
     GLuint* texArray;
     int numTextures;
+    bool* transparency;
     GLenum textureFormat(SDL_PixelFormat*, const char*);
   public:
     multiTex(int, const char*[]);
     ~multiTex();
     int loadTextures(const char*[]);
     void bindTexture(int);
+    bool isTransparent(int);
 };
 #endif
