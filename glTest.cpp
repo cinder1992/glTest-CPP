@@ -4,6 +4,9 @@
 #include <SDL2/SDL_opengl.h>
 #include <GL/glu.h>
 #include "glTest.h"
+#ifdef __WIN32__
+#include <windows.h>
+#endif // __WIN32__
 
 int main(int argc, char *argv[]) {
   if(init() == false) {
@@ -26,7 +29,7 @@ bool init(void) {
   return true;
 }
 
-bool initGL(void) {
+void initGL(void) { //TODO: Return code for when
   glShadeModel(GL_SMOOTH);
   glEnable(GL_COLOR_MATERIAL);
   glEnable(GL_TEXTURE_2D);
@@ -38,7 +41,7 @@ bool initGL(void) {
   glLoadIdentity();
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective(60, SCREEN_X / SCREEN_Y, 1, 1000);
+  gluPerspective(60, SCREEN_X / SCREEN_Y, 1, 1000); //FIXME: Rendering seems wide on X axis.
   glMatrixMode(GL_MODELVIEW);
   glEnable(GL_LIGHT0);
   //load textures
@@ -48,7 +51,7 @@ bool initGL(void) {
 
 void gameLoop(void) {
   SDL_Event event;
-  
+
   while((isRunning) && (SDL_WaitEvent(&event))) {
     switch(event.type) {
       case SDL_USEREVENT:
@@ -104,7 +107,22 @@ void handleKeyDown(SDL_KeyboardEvent *event) {
       break;
 
     case SDLK_TAB:
-      renderType = renderType == GL_TRIANGLES ? GL_LINE_STRIP : GL_TRIANGLES;
+      if(renderType == GL_TRIANGLES) {
+        glDisable(GL_LIGHT0);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_LIGHTING);
+        renderType = GL_LINE_STRIP;
+      }
+      else {
+        glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
+        glEnable(GL_TEXTURE_2D);
+        renderType = GL_TRIANGLES;
+      }
+      break;
+
+    case SDLK_LSHIFT:
+      if(cubeTexMode == 16) cubeTexMode = 0; else cubeTexMode++;
       break;
 
     default:
@@ -166,11 +184,11 @@ void drawScene(void) {
   SDL_GL_SwapWindow(mainWindow);
 }
 
-void drawCube(GLfloat scale, GLenum mode) {
-  cubeTex->bindTexture(3);
+void drawCube(GLfloat scale, GLenum mode) { //FIXME: Move to object file?
+  cubeTex->bindTexture(cubeTexMode);
   GLfloat Verticies[8][3] = {{-0.5, -0.5, -0.5}, {0.5, -0.5, -0.5}, {0.5, -0.5, 0.5}, {-0.5, -0.5, 0.5},
                              {-0.5,  0.5, -0.5}, {0.5,  0.5, -0.5}, {0.5,  0.5, 0.5}, {-0.5,  0.5, 0.5}};
-
+  //FIXME: UV Coordinates appear wrong when using non-TGA images.
   GLfloat uvMap[36][2] = {{0.75, 0.75}, {0.50, 0.75}, {0.50, 0.50}, {0.75, 0.75}, {0.75, 0.50}, {0.50, 0.50},
                           {0.50, 0.75}, {0.25, 0.75}, {0.25, 0.50}, {0.50, 0.75}, {0.50, 0.50}, {0.25, 0.50},
                           {0.25, 0.75}, {0.00, 0.75}, {0.00, 0.50}, {0.25, 0.75}, {0.25, 0.50}, {0.00, 0.50},
@@ -186,15 +204,19 @@ void drawCube(GLfloat scale, GLenum mode) {
                           5, 4, 7,  5, 6, 7};
 
   glBegin(mode);
-  //fprintf(stdout, "glBegin\n");
+  #ifdef DEBUG
+  fprintf(stdout, "glBegin\n");
+  #endif
   for(int i = 0; i <= 11; i++) {
     for(int j = 0; j <= 2; j++) {
       int Index = Indicies[3 * i + j];
-      if (mode != GL_TRIANGLES) 
+      if (mode != GL_TRIANGLES)
         glColor3f(1, 0, 0);
       else
-        //fprintf(stdout, "Index %i, Coordinates: %f, %f\n", Index, uvMap[3 * i + j][0], uvMap[3 * i + j][1]);
-        glTexCoord2f(uvMap[3 * i + j][0], 1.0 - uvMap[3 * i + j][1]); //T vector inverted because SDL_Image loads TGA upside-down.
+        #ifdef DEBUG
+        fprintf(stdout, "Index %i, Coordinates: %f, %f\n", Index, uvMap[3 * i + j][0], uvMap[3 * i + j][1]);
+        #endif
+        glTexCoord2f(uvMap[3 * i + j][0], 1.0 - uvMap[3 * i + j][1]); //TEST: SDL_Image loading TGA Upside down? T vector inverted for temp fix.
       glNormal3f(Verticies[Index][0] * 1.1, Verticies[Index][1] * 1.1, Verticies[Index][2] * 1.1);
       glVertex3f(Verticies[Index][0] * scale, Verticies[Index][1] * scale, Verticies[Index][2] * scale);
     }
@@ -205,7 +227,7 @@ void drawCube(GLfloat scale, GLenum mode) {
 
 void moveCamera(int direction) {
   if(direction == 1)
-    camx += 1; 
+    camx += 1;
   else if (direction == -1)
     camx -= 1;
 }

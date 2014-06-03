@@ -3,8 +3,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include "multiTex.h"
-//I know global vars are horrible and bad, but I'm not going to
-//use singlets to avoid them.
+//I know global vars are horrible and bad, but this code is C style, so I'll use them
 SDL_Window* mainWindow;
 SDL_GLContext mainGLContext;
 SDL_TimerID gameTick;
@@ -18,6 +17,8 @@ int camLeftRight;
 GLfloat camAngle = 0;
 GLfloat lightAngle = 0;
 bool lightOverride = false;
+int cubeTexMode = 0;
+int shrubTexMode = 0;
 GLenum renderType = GL_TRIANGLES;
 
 GLfloat Ambient[] = {3.0, 3.0, 3.0, 0.0};

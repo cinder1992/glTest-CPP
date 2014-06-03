@@ -1,6 +1,10 @@
 #include "multiTex.h"
 #include <iostream>
+#ifdef __WIN32__
+#include <cstdlib>
+#endif // __WIN32__
 
+//FIXME: Replace this code with the SDL2 texture function using SDL Surfaces
 multiTex::multiTex(int num, const char* texFile[]) {
   texArray = new GLuint [num];
   imgArray = new SDL_Surface* [num];
